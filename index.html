@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liton AI</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #0f172a; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .chat-container { width: 400px; height: 550px; background: #1e293b; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .chat-header { background: #3b82f6; padding: 12px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+        .clear-btn { background: #ef4444; border: none; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        .chat-box { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .message { padding: 10px 14px; border-radius: 8px; max-width: 80%; line-height: 1.4; word-break: break-word; }
+        .user-msg { background: #3b82f6; align-self: flex-end; }
+        .bot-msg { background: #334155; align-self: flex-start; }
+        .chat-input { padding: 10px; background: #0f172a; display: flex; gap: 8px; }
+        .chat-input input { flex: 1; padding: 10px; border: none; border-radius: 6px; background: #1e293b; color: white; outline: none; }
+        .chat-input button { background: #3b82f6; border: none; color: white; padding: 10px 15px; border-radius: 6px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <span>🤖 Liton AI</span>
+            <button class="clear-btn" onclick="clearChat()">Clear</button>
+        </div>
+        <div class="chat-box" id="chatBox">
+            <div class="message bot-msg">হালো! আমি Liton AI। আজ আপনাকে কীভাবে সাহায্য করতে পারি?</div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="userInput" placeholder="এখানে লিখুন..." onkeypress="handleKey(event)">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const inputField = document.getElementById('userInput');
+            const chatBox = document.getElementById('chatBox');
+            const text = inputField.value.trim();
+            if (!text) return;
+
+            chatBox.innerHTML += `<div class="message user-msg">${text}</div>`;
+            inputField.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            const loadingId = 'loading-' + Date.now();
+            chatBox.innerHTML += `<div class="message bot-msg" id="${loadingId}">টাইপ করছে...</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userText: text })
+                });
+                
+                const data = await response.json();
+                document.getElementById(loadingId).remove();
+
+                if (data.reply) {
+                    chatBox.innerHTML += `<div class="message bot-msg">${data.reply}</div>`;
+                } else {
+                    chatBox.innerHTML += `<div class="message bot-msg">দুঃখিত, কোনো উত্তর পাওয়া যায়নি।</div>`;
+                }
+            } catch (error) {
+                document.getElementById(loadingId).remove();
+                chatBox.innerHTML += `<div class="message bot-msg">সার্ভার কানেক্ট করতে সমস্যা হয়েছে!</div>`;
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function clearChat() {
+            document.getElementById('chatBox').innerHTML = `<div class="message bot-msg">হালো! আমি Liton AI। আজ আপনাকে কীভাবে সাহায্য করতে পারি?</div>`;
+        }
+
+        function handleKey(event) {
+            if (event.key === 'Enter') sendMessage();
+        }
+    </script>
+</body>
+</html>
